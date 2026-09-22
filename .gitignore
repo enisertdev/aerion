@@ -10,6 +10,8 @@ obj/
 # PlatformIO
 .pio/
 .piolibdeps/
+get-platformio.py
+firmware/ESP32/get-platformio.py
 
 # IDE
 .idea/
