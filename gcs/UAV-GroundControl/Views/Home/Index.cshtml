@@ -13,7 +13,7 @@
     <meta name="viewport"
           content="width=device-width, initial-scale=1.0" />
 
-    <title>AERO-X25 Ground Control Station</title>
+    <title>AERION Ground Control Station</title>
 
     <link rel="stylesheet"
           href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css" />
@@ -644,6 +644,46 @@
         }
 
 
+     /* =========================================================
+   METAR
+   ========================================================= */
+
+.metar-panel {
+    display: flex;
+    align-items: center;
+    gap: 10px;
+    margin-left: 30px;
+    margin-right: auto;
+    min-width: 0;
+}
+
+.metar-title {
+    font-size: 8px;
+    color: #73838b;
+    letter-spacing: 1.5px;
+    font-weight: bold;
+    white-space: nowrap;
+}
+
+.metar-value {
+    font-family: Consolas, monospace;
+    font-size: 10px;
+    font-weight: bold;
+    color: #dce5e8;
+    white-space: nowrap;
+    overflow: hidden;
+    text-overflow: ellipsis;
+    max-width: 520px;
+}
+
+.metar-status {
+    font-size: 7px;
+    color: #59686e;
+    letter-spacing: .5px;
+    white-space: nowrap;
+}
+    
+
         /* =========================================================
            RESPONSIVE
            ========================================================= */
@@ -654,6 +694,11 @@
                 grid-template-columns: 300px 1fr;
                 gap: 10px;
                 padding: 10px;
+            }
+
+            .metar-panel {
+                left: 316px;
+                min-width: 280px;
             }
         }
 
@@ -676,7 +721,7 @@
             <div>
 
                 <div class="brand-title">
-                    AERO-X25
+                    AERION
                 </div>
 
                 <div class="brand-sub">
@@ -686,6 +731,24 @@
             </div>
 
         </div>
+
+          <div class="metar-panel">
+
+        <div class="metar-title">
+            METAR / MMRI
+        </div>
+
+        <div id="metarValue"
+             class="metar-value">
+            LOADING...
+        </div>
+
+        <div id="metarStatus"
+             class="metar-status">
+            WEATHER DATA
+        </div>
+
+    </div>
 
 
         <div class="status">
@@ -702,6 +765,12 @@
 
     </header>
 
+
+    <!-- =========================================================
+         METAR
+         ========================================================= -->
+
+    
 
     <!-- =========================================================
          DASHBOARD
@@ -1164,7 +1233,7 @@
             <div class="map-overlay">
 
                 <div class="map-overlay-title">
-                    AERO-X25
+                    AERION
                 </div>
 
                 <div class="map-overlay-sub">
@@ -1203,7 +1272,6 @@
         // JOYSTICK
         // ---------------------------------------------------------
 
-        // Backend'den gelen gerçek joystick komutu
         let joystickPitch = 90;
         let joystickRoll = 90;
         let joystickYaw = 90;
@@ -1211,12 +1279,10 @@
         let flightMode = 0;
 
 
-        // PFD'de çizilecek joystick hedefi
         let targetJoystickPitch = 90;
         let targetJoystickRoll = 90;
 
 
-        // PFD'de şu anda görünen joystick
         let displayedJoystickPitch = 90;
         let displayedJoystickRoll = 90;
 
@@ -1325,17 +1391,9 @@
                 airspeed = 0;
 
 
-            // -----------------------------------------------------
-            // PITCH
-            // -----------------------------------------------------
-
             const pitchOffset =
                 -pitch * 4.0;
 
-
-            // -----------------------------------------------------
-            // ROLL
-            // -----------------------------------------------------
 
             const rollAngle =
                 roll;
@@ -1345,10 +1403,6 @@
                 `translateY(${pitchOffset}px) ` +
                 `rotate(${rollAngle}deg)`;
 
-
-            // -----------------------------------------------------
-            // ALTITUDE
-            // -----------------------------------------------------
 
             const altOffset =
                 -(altitude / 50) * 25;
@@ -1361,10 +1415,6 @@
             altValues.style.transform =
                 `translateY(${altOffset}px)`;
 
-
-            // -----------------------------------------------------
-            // AIRSPEED
-            // -----------------------------------------------------
 
             const speedOffset =
                 -(airspeed / 10) * 25;
@@ -1417,10 +1467,7 @@
 
 
         // =========================================================
-        // SMOOTH JOYSTICK RENDER
-        //
-        // SignalR örneğin 20 FPS veri gönderse bile
-        // browser reticle'i yaklaşık 60 FPS çizer.
+        // SMOOTH JOYSTICK
         // =========================================================
 
         const JOYSTICK_SMOOTHING = 0.18;
@@ -1532,19 +1579,15 @@
                 `calc(-50% + ${y}px))`;
 
 
-            // -----------------------------------------------------
-            // COMMAND READOUT
-            // -----------------------------------------------------
-
             const displayPitch =
                 Math.round(
-                    (pitch - 90)
+                    pitch - 90
                 );
 
 
             const displayRoll =
                 Math.round(
-                    (roll - 90)
+                    roll - 90
                 );
 
 
@@ -1748,7 +1791,6 @@
                     : 0;
 
 
-            // Backend şu anda altitude göndermiyor.
             currentAltitude = 0;
         }
 
@@ -1760,10 +1802,6 @@
         function updateIMU(
             data
         ) {
-
-            // -----------------------------------------------------
-            // GERÇEK IMU
-            // -----------------------------------------------------
 
             const pitch =
                 Number(
@@ -1780,10 +1818,6 @@
                     0
                 );
 
-
-            // -----------------------------------------------------
-            // ACCELEROMETER
-            // -----------------------------------------------------
 
             const ax =
                 Number(
@@ -1809,10 +1843,6 @@
                 );
 
 
-            // -----------------------------------------------------
-            // GYRO
-            // -----------------------------------------------------
-
             const gx =
                 Number(
                     data.gyroX ??
@@ -1837,10 +1867,6 @@
                 );
 
 
-            // -----------------------------------------------------
-            // IMU STATE
-            // -----------------------------------------------------
-
             if (Number.isFinite(pitch)) {
 
                 imuPitch =
@@ -1860,10 +1886,6 @@
                     roll;
             }
 
-
-            // -----------------------------------------------------
-            // IMU NUMERIC DISPLAY
-            // -----------------------------------------------------
 
             imuPitchValue.textContent =
                 `${imuPitch >= 0 ? "+" : ""}` +
@@ -1886,10 +1908,6 @@
                 `${gy.toFixed(2)} ` +
                 `${gz.toFixed(2)}`;
 
-
-            // -----------------------------------------------------
-            // JOYSTICK COMMAND
-            // -----------------------------------------------------
 
             const commandPitch =
                 Number(
@@ -1930,10 +1948,6 @@
                     0
                 );
 
-
-            // -----------------------------------------------------
-            // JOYSTICK STATE
-            // -----------------------------------------------------
 
             if (Number.isFinite(commandPitch)) {
 
@@ -1990,24 +2004,11 @@
             }
 
 
-            // -----------------------------------------------------
-            // ÖNEMLİ:
-            //
-            // Burada reticle'i doğrudan hareket ettirmiyoruz.
-            //
-            // SignalR → target
-            // requestAnimationFrame → reticle
-            // -----------------------------------------------------
-
             setJoystickTarget(
                 joystickPitch,
                 joystickRoll
             );
 
-
-            // -----------------------------------------------------
-            // THROTTLE
-            // -----------------------------------------------------
 
             updateThrottle(
                 (joystickThrottle / 255) * 100
@@ -2043,10 +2044,6 @@
                     return;
 
 
-                // -------------------------------------------------
-                // CONNECTION
-                // -------------------------------------------------
-
                 const connected =
                     data.isConnected ??
                     data.IsConnected ??
@@ -2058,27 +2055,15 @@
                 );
 
 
-                // -------------------------------------------------
-                // GPS
-                // -------------------------------------------------
-
                 updateGPS(
                     data
                 );
 
 
-                // -------------------------------------------------
-                // IMU + JOYSTICK
-                // -------------------------------------------------
-
                 updateIMU(
                     data
                 );
 
-
-                // -------------------------------------------------
-                // IMU STATUS
-                // -------------------------------------------------
 
                 if (connected) {
 
@@ -2334,6 +2319,97 @@
                 );
 
             }
+        );
+
+
+        // =========================================================
+        // METAR
+        // =========================================================
+
+        const METAR_API =
+            "https://metar.imaginewebsite.com.tr/api/weather/metar";
+
+
+        const metarValue =
+            document.getElementById("metarValue");
+
+
+        const metarStatus =
+            document.getElementById("metarStatus");
+
+
+        async function updateMETAR() {
+
+            try {
+
+                const response =
+                    await fetch(
+                        METAR_API,
+                        {
+                            cache: "no-store"
+                        }
+                    );
+
+
+                if (!response.ok) {
+
+                    throw new Error(
+                        `HTTP ${response.status}`
+                    );
+                }
+
+
+                const data =
+                    await response.text();
+
+
+                const metar =
+                    data.trim();
+
+
+                if (!metar) {
+
+                    throw new Error(
+                        "Empty METAR response"
+                    );
+                }
+
+
+                metarValue.textContent =
+                    metar;
+
+
+                metarStatus.textContent =
+                    "LIVE WEATHER DATA";
+
+
+            }
+            catch (error) {
+
+                console.error(
+                    "METAR error:",
+                    error
+                );
+
+
+                metarValue.textContent =
+                    "NO DATA";
+
+
+                metarStatus.textContent =
+                    "METAR UNAVAILABLE";
+            }
+        }
+
+
+        // İlk METAR verisi
+        updateMETAR();
+
+
+        // Her 5 dakikada bir güncelle
+        setInterval(
+            updateMETAR,
+            5 * 60 * 1000
         );
 
 
