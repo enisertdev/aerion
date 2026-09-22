@@ -1,0 +1,43 @@
+#pragma once
+
+// GPS
+#define GPS_RX_PIN 16
+#define GPS_TX_PIN 17
+#define GPS_BAUD 115200
+
+// I2C / QMC5883P
+#define COMPASS_SDA_PIN 21
+#define COMPASS_SCL_PIN 22
+
+// LoRa
+#define LORA_RX_PIN 32
+#define LORA_TX_PIN 33
+#define LORA_BAUD 115200
+
+// Compass
+#define COMPASS_ADDRESS 0x2C
+// Telemetry Headers
+#define TELEMETRY_TX_HEADER_1 0x35
+#define TELEMETRY_TX_HEADER_2 0x48
+
+#define TELEMETRY_RX_HEADER_1 0x25
+#define TELEMETRY_RX_HEADER_2 0x28
+
+// Flight
+#define DEFAULT_THROTTLE 0
+#define DEFAULT_PITCH_ANGLE 90
+#define DEFAULT_ROLL_ANGLE 90
+#define DEFAULT_YAW_ANGLE 90
+
+// Failsafe
+#define FAILSAFE_TIMEOUT 1000
+
+#define ESC_PWM_PIN 27
+#define ESC_PWM_CHANNEL 0
+#define ESC_PWM_FREQ 50
+#define ESC_PWM_RESOLUTION 16
+
+#define WIFI_SSID "YourSSID"
+#define WIFI_PASSWORD "YourPassword"
+
+#define FLIGHT_MODE_CALIBRATE_IMU 250

@@ -1,0 +1,2350 @@
+﻿@{
+    Layout = null;
+}
+
+<!DOCTYPE html>
+
+<html lang="tr">
+
+<head>
+
+    <meta charset="utf-8" />
+
+    <meta name="viewport"
+          content="width=device-width, initial-scale=1.0" />
+
+    <title>AERO-X25 Ground Control Station</title>
+
+    <link rel="stylesheet"
+          href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css" />
+
+    <script src="https://cdn.jsdelivr.net/npm/@@microsoft/signalr@8.0.7/dist/browser/signalr.min.js"></script>
+
+    <script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"></script>
+
+
+    <style>
+
+        * {
+            box-sizing: border-box;
+        }
+
+        html,
+        body {
+            margin: 0;
+            width: 100%;
+            height: 100%;
+            overflow: hidden;
+            background: #05080a;
+            color: #d7e0e5;
+            font-family: Arial, Helvetica, sans-serif;
+        }
+
+        body {
+            display: flex;
+            flex-direction: column;
+        }
+
+
+        /* =========================================================
+           HEADER
+           ========================================================= */
+
+        .topbar {
+            height: 54px;
+            min-height: 54px;
+            background: #080d10;
+            border-bottom: 1px solid #263238;
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            padding: 0 16px;
+        }
+
+        .brand {
+            display: flex;
+            align-items: center;
+            gap: 12px;
+        }
+
+        .brand-title {
+            font-size: 17px;
+            font-weight: bold;
+            letter-spacing: 2px;
+            color: #f1f5f7;
+        }
+
+        .brand-sub {
+            font-size: 10px;
+            color: #708088;
+            letter-spacing: 1px;
+        }
+
+        .status {
+            display: flex;
+            align-items: center;
+            gap: 8px;
+            font-size: 11px;
+            font-weight: bold;
+            letter-spacing: 1px;
+        }
+
+        .status-dot {
+            width: 9px;
+            height: 9px;
+            border-radius: 50%;
+            background: #777;
+            box-shadow: 0 0 6px rgba(255,255,255,.15);
+        }
+
+        .status-dot.online {
+            background: #37d67a;
+            box-shadow: 0 0 8px rgba(55,214,122,.7);
+        }
+
+        .status-dot.offline {
+            background: #e64c4c;
+            box-shadow: 0 0 8px rgba(230,76,76,.5);
+        }
+
+
+        /* =========================================================
+           MAIN
+           ========================================================= */
+
+        .dashboard-container {
+            flex: 1;
+            min-height: 0;
+            display: grid;
+            grid-template-columns: 360px 1fr;
+            gap: 16px;
+            padding: 16px;
+        }
+
+
+        /* =========================================================
+           LEFT
+           ========================================================= */
+
+        .telemetry-panel {
+            min-height: 0;
+            display: grid;
+            grid-template-rows: 90px 140px minmax(320px, 1fr);
+            gap: 10px;
+        }
+
+        .panel {
+            background: #0a1013;
+            border: 1px solid #263238;
+            border-radius: 6px;
+            padding: 10px;
+            min-width: 0;
+            min-height: 0;
+        }
+
+        .panel-title {
+            font-size: 9px;
+            color: #73838b;
+            letter-spacing: 1.5px;
+            margin-bottom: 7px;
+            font-weight: bold;
+        }
+
+
+        /* =========================================================
+           ENGINE
+           ========================================================= */
+
+        .engine-panel {
+            display: grid;
+            grid-template-columns: 1fr 1fr;
+            gap: 10px;
+        }
+
+        .engine-box {
+            position: relative;
+            min-width: 0;
+        }
+
+        .value {
+            font-size: 18px;
+            font-weight: bold;
+            color: #f0f4f5;
+            line-height: 1;
+        }
+
+        .unit {
+            font-size: 9px;
+            color: #65747a;
+            margin-left: 2px;
+        }
+
+        .bar {
+            height: 5px;
+            background: #182126;
+            border-radius: 3px;
+            overflow: hidden;
+            margin-top: 9px;
+        }
+
+        .bar-fill {
+            height: 100%;
+            width: 0%;
+            background: #d8e0e3;
+            transition: width .08s linear;
+        }
+
+
+        /* =========================================================
+           GPS
+           ========================================================= */
+
+        .gps-panel {
+            display: flex;
+            flex-direction: column;
+        }
+
+        .gps-grid {
+            display: grid;
+            grid-template-columns: 1fr 1fr;
+            gap: 7px;
+            flex: 1;
+        }
+
+        .gps-item {
+            background: #080d10;
+            border: 1px solid #1e292e;
+            border-radius: 4px;
+            padding: 7px;
+        }
+
+        .gps-label {
+            font-size: 8px;
+            color: #64737a;
+            letter-spacing: 1px;
+        }
+
+        .gps-value {
+            margin-top: 3px;
+            font-size: 12px;
+            font-weight: bold;
+            color: #dce5e8;
+        }
+
+
+        /* =========================================================
+           PFD PANEL
+           ========================================================= */
+
+        .mini-pfd-panel {
+            display: flex;
+            flex-direction: column;
+            overflow: hidden;
+        }
+
+        .pfd-title-row {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+        }
+
+        .pfd-imu-status {
+            font-size: 8px;
+            color: #59686e;
+            letter-spacing: 1px;
+        }
+
+
+        /* =========================================================
+           PFD
+           ========================================================= */
+
+        .mini-pfd {
+            position: relative;
+            flex: 1;
+            min-height: 280px;
+            overflow: hidden;
+            background: #151a1d;
+            border: 1px solid #344047;
+            border-radius: 4px;
+        }
+
+
+        /* =========================================================
+           HORIZON
+           ========================================================= */
+
+        .horizon-wrapper {
+            position: absolute;
+            left: -30%;
+            top: -50%;
+            width: 160%;
+            height: 200%;
+            transform-origin: center center;
+            transform: translateY(0px) rotate(0deg);
+            will-change: transform;
+        }
+
+        .sky {
+            position: absolute;
+            top: 0;
+            left: 0;
+            right: 0;
+            height: 50%;
+            background: #28607a;
+        }
+
+        .ground {
+            position: absolute;
+            bottom: 0;
+            left: 0;
+            right: 0;
+            height: 50%;
+            background: #5b4434;
+        }
+
+        .horizon-line {
+            position: absolute;
+            top: 50%;
+            left: 0;
+            right: 0;
+            height: 2px;
+            background: #e2e5e6;
+            transform: translateY(-1px);
+        }
+
+
+        /* =========================================================
+           PITCH LADDER
+           ========================================================= */
+
+        .pitch-ladder {
+            position: absolute;
+            inset: 0;
+            z-index: 15;
+            pointer-events: none;
+        }
+
+        .pitch-line {
+            position: absolute;
+            left: 50%;
+            height: 1px;
+            transform: translateX(-50%);
+            display: flex;
+            align-items: center;
+            justify-content: center;
+        }
+
+        .pitch-line::before,
+        .pitch-line::after {
+            content: "";
+            height: 1px;
+            background: rgba(255,255,255,.85);
+        }
+
+        .pitch-line.major {
+            width: 150px;
+        }
+
+        .pitch-line.major::before,
+        .pitch-line.major::after {
+            width: 52px;
+        }
+
+        .pitch-number {
+            color: white;
+            font-size: 10px;
+            font-weight: bold;
+            width: 34px;
+            text-align: center;
+            text-shadow: 0 1px 3px #000;
+        }
+
+
+        /* =========================================================
+           AIRCRAFT SYMBOL
+           ========================================================= */
+
+        .aircraft-symbol {
+            position: absolute;
+            z-index: 30;
+            left: 50%;
+            top: 50%;
+            width: 110px;
+            height: 40px;
+            transform: translate(-50%, -50%);
+            pointer-events: none;
+        }
+
+        .aircraft-center {
+            position: absolute;
+            width: 9px;
+            height: 9px;
+            border: 2px solid #ffd43b;
+            border-radius: 50%;
+            left: 50%;
+            top: 50%;
+            transform: translate(-50%, -50%);
+        }
+
+        .aircraft-left,
+        .aircraft-right {
+            position: absolute;
+            top: 50%;
+            width: 43px;
+            height: 3px;
+            background: #ffd43b;
+            transform: translateY(-50%);
+        }
+
+        .aircraft-left {
+            right: 50%;
+        }
+
+        .aircraft-right {
+            left: 50%;
+        }
+
+
+        /* =========================================================
+           JOYSTICK RETICLE
+           ========================================================= */
+
+        .joystick-reticle {
+            position: absolute;
+            left: 50%;
+            top: 50%;
+            width: 54px;
+            height: 54px;
+            transform: translate(-50%, -50%);
+            z-index: 40;
+            pointer-events: none;
+            filter: drop-shadow(0 0 4px rgba(255,255,255,.7));
+            will-change: transform;
+        }
+
+        .reticle-ring {
+            position: absolute;
+            inset: 12px;
+            border: 1px solid rgba(255,255,255,.95);
+            border-radius: 50%;
+        }
+
+        .reticle-h {
+            position: absolute;
+            left: 0;
+            right: 0;
+            top: 50%;
+            height: 1px;
+            background: white;
+        }
+
+        .reticle-v {
+            position: absolute;
+            top: 0;
+            bottom: 0;
+            left: 50%;
+            width: 1px;
+            background: white;
+        }
+
+        .reticle-dot {
+            position: absolute;
+            left: 50%;
+            top: 50%;
+            width: 5px;
+            height: 5px;
+            transform: translate(-50%, -50%);
+            background: white;
+            border-radius: 50%;
+        }
+
+        .command-readout {
+            position: absolute;
+            left: 50%;
+            top: calc(50% + 38px);
+            transform: translateX(-50%);
+            z-index: 41;
+            padding: 2px 5px;
+            background: rgba(0,0,0,.45);
+            color: white;
+            font-size: 9px;
+            font-weight: bold;
+            letter-spacing: .5px;
+            white-space: nowrap;
+            pointer-events: none;
+        }
+
+
+        /* =========================================================
+           IMU READOUT
+           ========================================================= */
+
+        .imu-readout {
+            position: absolute;
+            left: 8px;
+            bottom: 8px;
+            z-index: 50;
+            min-width: 112px;
+            padding: 6px 8px;
+            background: rgba(0,0,0,.65);
+            border: 1px solid rgba(255,255,255,.15);
+            border-radius: 4px;
+            font-family: Consolas, monospace;
+            font-size: 8px;
+            line-height: 1.5;
+            color: #dce5e8;
+            pointer-events: none;
+        }
+
+        .imu-readout-title {
+            color: #7d8b91;
+            font-size: 7px;
+            letter-spacing: 1px;
+            margin-bottom: 2px;
+        }
+
+        .imu-angle {
+            color: #ffd43b;
+            font-weight: bold;
+        }
+
+
+        /* =========================================================
+           SPEED
+           ========================================================= */
+
+        .speed-tape {
+            position: absolute;
+            left: 7px;
+            top: 50%;
+            transform: translateY(-50%);
+            z-index: 25;
+            width: 42px;
+            pointer-events: none;
+        }
+
+        .speed-title {
+            font-size: 8px;
+            color: white;
+            text-align: center;
+            margin-bottom: 5px;
+            text-shadow: 0 1px 3px #000;
+        }
+
+        .speed-value {
+            display: flex;
+            justify-content: space-between;
+            font-size: 8px;
+            color: white;
+            height: 25px;
+            align-items: center;
+            text-shadow: 0 1px 3px #000;
+        }
+
+        .speed-pointer {
+            position: absolute;
+            right: -4px;
+            top: 50%;
+            width: 8px;
+            height: 8px;
+            border-top: 4px solid transparent;
+            border-bottom: 4px solid transparent;
+            border-right: 7px solid white;
+            transform: translateY(-50%);
+        }
+
+
+        /* =========================================================
+           ALTITUDE
+           ========================================================= */
+
+        .alt-tape {
+            position: absolute;
+            right: 7px;
+            top: 50%;
+            transform: translateY(-50%);
+            z-index: 25;
+            width: 48px;
+            pointer-events: none;
+        }
+
+        .alt-title {
+            font-size: 8px;
+            color: white;
+            text-align: center;
+            margin-bottom: 5px;
+            text-shadow: 0 1px 3px #000;
+        }
+
+        .alt-value {
+            display: flex;
+            justify-content: space-between;
+            font-size: 8px;
+            color: white;
+            height: 25px;
+            align-items: center;
+            text-shadow: 0 1px 3px #000;
+        }
+
+        .alt-pointer {
+            position: absolute;
+            left: -4px;
+            top: 50%;
+            width: 8px;
+            height: 8px;
+            border-top: 4px solid transparent;
+            border-bottom: 4px solid transparent;
+            border-left: 7px solid white;
+            transform: translateY(-50%);
+        }
+
+
+        /* =========================================================
+           MAP
+           ========================================================= */
+
+        .map-panel {
+            position: relative;
+            min-width: 0;
+            min-height: 0;
+            background: #080d10;
+            border: 1px solid #263238;
+            border-radius: 6px;
+            overflow: hidden;
+        }
+
+        #map {
+            width: 100%;
+            height: 100%;
+        }
+
+        .map-overlay {
+            position: absolute;
+            z-index: 1000;
+            left: 12px;
+            top: 12px;
+            background: rgba(5,8,10,.88);
+            border: 1px solid #303b40;
+            border-radius: 5px;
+            padding: 9px 12px;
+        }
+
+        .map-overlay-title {
+            font-size: 10px;
+            font-weight: bold;
+            letter-spacing: 1px;
+            color: white;
+        }
+
+        .map-overlay-sub {
+            margin-top: 4px;
+            font-size: 8px;
+            color: #718087;
+        }
+
+
+        /* =========================================================
+           RESPONSIVE
+           ========================================================= */
+
+        @@media (max-width: 900px) {
+
+            .dashboard-container {
+                grid-template-columns: 300px 1fr;
+                gap: 10px;
+                padding: 10px;
+            }
+        }
+
+    </style>
+
+</head>
+
+
+<body>
+
+
+    <!-- =========================================================
+         HEADER
+         ========================================================= -->
+
+    <header class="topbar">
+
+        <div class="brand">
+
+            <div>
+
+                <div class="brand-title">
+                    AERO-X25
+                </div>
+
+                <div class="brand-sub">
+                    GROUND CONTROL STATION
+                </div>
+
+            </div>
+
+        </div>
+
+
+        <div class="status">
+
+            <div id="connectionDot"
+                 class="status-dot offline">
+            </div>
+
+            <span id="connectionText">
+                DISCONNECTED
+            </span>
+
+        </div>
+
+    </header>
+
+
+    <!-- =========================================================
+         DASHBOARD
+         ========================================================= -->
+
+    <main class="dashboard-container">
+
+
+        <!-- =====================================================
+             LEFT
+             ===================================================== -->
+
+        <section class="telemetry-panel">
+
+
+            <!-- =================================================
+                 ENGINE
+                 ================================================= -->
+
+            <div class="panel engine-panel">
+
+                <div class="engine-box">
+
+                    <div class="panel-title">
+                        ENGINE THROTTLE
+                    </div>
+
+                    <div>
+
+                        <span id="throttleValue"
+                              class="value">
+                            0
+                        </span>
+
+                        <span class="unit">
+                            %
+                        </span>
+
+                    </div>
+
+                    <div class="bar">
+
+                        <div id="throttleBar"
+                             class="bar-fill">
+                        </div>
+
+                    </div>
+
+                </div>
+
+
+                <div class="engine-box">
+
+                    <div class="panel-title">
+                        BATTERY
+                    </div>
+
+                    <div>
+
+                        <span id="batteryValue"
+                              class="value">
+                            --
+                        </span>
+
+                        <span class="unit">
+                            V
+                        </span>
+
+                    </div>
+
+                    <div class="bar">
+
+                        <div id="batteryBar"
+                             class="bar-fill">
+                        </div>
+
+                    </div>
+
+                </div>
+
+            </div>
+
+
+            <!-- =================================================
+                 GPS
+                 ================================================= -->
+
+            <div class="panel gps-panel">
+
+                <div class="panel-title">
+                    GPS / FLIGHT DATA
+                </div>
+
+
+                <div class="gps-grid">
+
+
+                    <div class="gps-item">
+
+                        <div class="gps-label">
+                            LATITUDE
+                        </div>
+
+                        <div id="latitude"
+                             class="gps-value">
+                            0.000000
+                        </div>
+
+                    </div>
+
+
+                    <div class="gps-item">
+
+                        <div class="gps-label">
+                            LONGITUDE
+                        </div>
+
+                        <div id="longitude"
+                             class="gps-value">
+                            0.000000
+                        </div>
+
+                    </div>
+
+
+                    <div class="gps-item">
+
+                        <div class="gps-label">
+                            ALTITUDE
+                        </div>
+
+                        <div id="altitude"
+                             class="gps-value">
+                            -- m
+                        </div>
+
+                    </div>
+
+
+                    <div class="gps-item">
+
+                        <div class="gps-label">
+                            SATELLITES
+                        </div>
+
+                        <div id="satellites"
+                             class="gps-value">
+                            0
+                        </div>
+
+                    </div>
+
+                </div>
+
+            </div>
+
+
+            <!-- =================================================
+                 PFD
+                 ================================================= -->
+
+            <div class="panel mini-pfd-panel">
+
+
+                <div class="pfd-title-row">
+
+                    <div class="panel-title">
+                        PRIMARY FLIGHT DISPLAY
+                    </div>
+
+                    <div id="imuStatus"
+                         class="pfd-imu-status">
+                        IMU: CALIBRATING
+                    </div>
+
+                </div>
+
+
+                <div id="miniPfd"
+                     class="mini-pfd">
+
+
+                    <!-- =========================================
+                         HORIZON
+                         ========================================= -->
+
+                    <div id="horizon"
+                         class="horizon-wrapper">
+
+                        <div class="sky"></div>
+
+                        <div class="ground"></div>
+
+                        <div class="horizon-line"></div>
+
+
+                        <!-- =====================================
+                             PITCH LADDER
+                             ===================================== -->
+
+                        <div class="pitch-ladder">
+
+                            <div class="pitch-line major"
+                                 style="top: 20%;">
+                                <span class="pitch-number">
+                                    +30°
+                                </span>
+                            </div>
+
+
+                            <div class="pitch-line major"
+                                 style="top: 30%;">
+                                <span class="pitch-number">
+                                    +20°
+                                </span>
+                            </div>
+
+
+                            <div class="pitch-line major"
+                                 style="top: 40%;">
+                                <span class="pitch-number">
+                                    +10°
+                                </span>
+                            </div>
+
+
+                            <div class="pitch-line major"
+                                 style="top: 50%;">
+                                <span class="pitch-number">
+                                    0°
+                                </span>
+                            </div>
+
+
+                            <div class="pitch-line major"
+                                 style="top: 60%;">
+                                <span class="pitch-number">
+                                    -10°
+                                </span>
+                            </div>
+
+
+                            <div class="pitch-line major"
+                                 style="top: 70%;">
+                                <span class="pitch-number">
+                                    -20°
+                                </span>
+                            </div>
+
+
+                            <div class="pitch-line major"
+                                 style="top: 80%;">
+                                <span class="pitch-number">
+                                    -30°
+                                </span>
+                            </div>
+
+                        </div>
+
+                    </div>
+
+
+                    <!-- =========================================
+                         SPEED
+                         ========================================= -->
+
+                    <div class="speed-tape">
+
+                        <div class="speed-title">
+                            SPD
+                        </div>
+
+                        <div id="speedValues">
+
+                            <div class="speed-value">
+                                <span>60</span>
+                            </div>
+
+                            <div class="speed-value">
+                                <span>50</span>
+                            </div>
+
+                            <div class="speed-value">
+                                <span>40</span>
+                            </div>
+
+                            <div class="speed-value">
+                                <span>30</span>
+                            </div>
+
+                            <div class="speed-value">
+                                <span>20</span>
+                            </div>
+
+                            <div class="speed-value">
+                                <span>10</span>
+                            </div>
+
+                            <div class="speed-value">
+                                <span>0</span>
+                            </div>
+
+                        </div>
+
+                        <div class="speed-pointer"></div>
+
+                    </div>
+
+
+                    <!-- =========================================
+                         ALTITUDE
+                         ========================================= -->
+
+                    <div class="alt-tape">
+
+                        <div class="alt-title">
+                            ALT
+                        </div>
+
+                        <div id="altValues">
+
+                            <div class="alt-value">
+                                <span>300</span>
+                            </div>
+
+                            <div class="alt-value">
+                                <span>250</span>
+                            </div>
+
+                            <div class="alt-value">
+                                <span>200</span>
+                            </div>
+
+                            <div class="alt-value">
+                                <span>150</span>
+                            </div>
+
+                            <div class="alt-value">
+                                <span>100</span>
+                            </div>
+
+                            <div class="alt-value">
+                                <span>50</span>
+                            </div>
+
+                            <div class="alt-value">
+                                <span>0</span>
+                            </div>
+
+                        </div>
+
+                        <div class="alt-pointer"></div>
+
+                    </div>
+
+
+                    <!-- =========================================
+                         AIRCRAFT SYMBOL
+                         ========================================= -->
+
+                    <div class="aircraft-symbol">
+
+                        <div class="aircraft-left"></div>
+
+                        <div class="aircraft-center"></div>
+
+                        <div class="aircraft-right"></div>
+
+                    </div>
+
+
+                    <!-- =========================================
+                         JOYSTICK RETICLE
+                         ========================================= -->
+
+                    <div id="joystickReticle"
+                         class="joystick-reticle">
+
+                        <div class="reticle-h"></div>
+
+                        <div class="reticle-v"></div>
+
+                        <div class="reticle-ring"></div>
+
+                        <div class="reticle-dot"></div>
+
+                    </div>
+
+
+                    <!-- =========================================
+                         COMMAND
+                         ========================================= -->
+
+                    <div id="commandReadout"
+                         class="command-readout">
+
+                        CMD P +0° / R +0°
+
+                    </div>
+
+
+                    <!-- =========================================
+                         LIVE IMU
+                         ========================================= -->
+
+                    <div class="imu-readout">
+
+                        <div class="imu-readout-title">
+                            IMU ATTITUDE
+                        </div>
+
+                        <div>
+                            PITCH:
+                            <span id="imuPitchValue"
+                                  class="imu-angle">
+                                0.0°
+                            </span>
+                        </div>
+
+                        <div>
+                            ROLL:
+                            <span id="imuRollValue"
+                                  class="imu-angle">
+                                0.0°
+                            </span>
+                        </div>
+
+                        <div>
+                            ACC:
+                            <span id="imuAccelValue">
+                                0.00 0.00 0.00
+                            </span>
+                        </div>
+
+                        <div>
+                            GYR:
+                            <span id="imuGyroValue">
+                                0.00 0.00 0.00
+                            </span>
+                        </div>
+
+                    </div>
+
+
+                </div>
+
+            </div>
+
+        </section>
+
+
+        <!-- =====================================================
+             MAP
+             ===================================================== -->
+
+        <section class="map-panel">
+
+            <div id="map"></div>
+
+            <div class="map-overlay">
+
+                <div class="map-overlay-title">
+                    AERO-X25
+                </div>
+
+                <div class="map-overlay-sub">
+                    LIVE FLIGHT MAP
+                </div>
+
+            </div>
+
+        </section>
+
+
+    </main>
+
+
+    <script>
+
+        // =========================================================
+        // STATE
+        // =========================================================
+
+        // ---------------------------------------------------------
+        // GERÇEK IMU
+        // ---------------------------------------------------------
+
+        let targetImuPitch = 0;
+        let targetImuRoll = 0;
+
+        let smoothImuPitch = 0;
+        let smoothImuRoll = 0;
+
+        let imuPitch = 0;
+        let imuRoll = 0;
+
+
+        // ---------------------------------------------------------
+        // JOYSTICK
+        // ---------------------------------------------------------
+
+        // Backend'den gelen gerçek joystick komutu
+        let joystickPitch = 90;
+        let joystickRoll = 90;
+        let joystickYaw = 90;
+        let joystickThrottle = 0;
+        let flightMode = 0;
+
+
+        // PFD'de çizilecek joystick hedefi
+        let targetJoystickPitch = 90;
+        let targetJoystickRoll = 90;
+
+
+        // PFD'de şu anda görünen joystick
+        let displayedJoystickPitch = 90;
+        let displayedJoystickRoll = 90;
+
+
+        // ---------------------------------------------------------
+        // OTHER DATA
+        // ---------------------------------------------------------
+
+        let currentAltitude = 0;
+        let currentAirspeed = 0;
+
+
+        // =========================================================
+        // DOM
+        // =========================================================
+
+        const horizon =
+            document.getElementById("horizon");
+
+        const miniPfd =
+            document.getElementById("miniPfd");
+
+        const joystickReticle =
+            document.getElementById("joystickReticle");
+
+        const commandReadout =
+            document.getElementById("commandReadout");
+
+        const throttleValue =
+            document.getElementById("throttleValue");
+
+        const throttleBar =
+            document.getElementById("throttleBar");
+
+        const batteryValue =
+            document.getElementById("batteryValue");
+
+        const batteryBar =
+            document.getElementById("batteryBar");
+
+        const connectionDot =
+            document.getElementById("connectionDot");
+
+        const connectionText =
+            document.getElementById("connectionText");
+
+        const imuStatus =
+            document.getElementById("imuStatus");
+
+        const imuPitchValue =
+            document.getElementById("imuPitchValue");
+
+        const imuRollValue =
+            document.getElementById("imuRollValue");
+
+        const imuAccelValue =
+            document.getElementById("imuAccelValue");
+
+        const imuGyroValue =
+            document.getElementById("imuGyroValue");
+
+
+        // =========================================================
+        // CLAMP
+        // =========================================================
+
+        function clamp(value, min, max) {
+
+            return Math.max(
+                min,
+                Math.min(
+                    max,
+                    value
+                )
+            );
+        }
+
+
+        // =========================================================
+        // PFD
+        // =========================================================
+
+        function updateMiniPFD(
+            pitch,
+            roll,
+            altitude,
+            airspeed
+        ) {
+
+            pitch = Number(pitch);
+            roll = -Number(roll);
+            altitude = Number(altitude);
+            airspeed = Number(airspeed);
+
+
+            if (!Number.isFinite(pitch))
+                pitch = 0;
+
+            if (!Number.isFinite(roll))
+                roll = 0;
+
+            if (!Number.isFinite(altitude))
+                altitude = 0;
+
+            if (!Number.isFinite(airspeed))
+                airspeed = 0;
+
+
+            // -----------------------------------------------------
+            // PITCH
+            // -----------------------------------------------------
+
+            const pitchOffset =
+                -pitch * 4.0;
+
+
+            // -----------------------------------------------------
+            // ROLL
+            // -----------------------------------------------------
+
+            const rollAngle =
+                roll;
+
+
+            horizon.style.transform =
+                `translateY(${pitchOffset}px) ` +
+                `rotate(${rollAngle}deg)`;
+
+
+            // -----------------------------------------------------
+            // ALTITUDE
+            // -----------------------------------------------------
+
+            const altOffset =
+                -(altitude / 50) * 25;
+
+
+            const altValues =
+                document.getElementById("altValues");
+
+
+            altValues.style.transform =
+                `translateY(${altOffset}px)`;
+
+
+            // -----------------------------------------------------
+            // AIRSPEED
+            // -----------------------------------------------------
+
+            const speedOffset =
+                -(airspeed / 10) * 25;
+
+
+            const speedValues =
+                document.getElementById("speedValues");
+
+
+            speedValues.style.transform =
+                `translateY(${speedOffset}px)`;
+        }
+
+
+        // =========================================================
+        // JOYSTICK TARGET
+        // =========================================================
+
+        function setJoystickTarget(
+            pitch,
+            roll
+        ) {
+
+            pitch = Number(pitch);
+            roll = Number(roll);
+
+
+            if (!Number.isFinite(pitch))
+                pitch = 90;
+
+            if (!Number.isFinite(roll))
+                roll = 90;
+
+
+            targetJoystickPitch =
+                clamp(
+                    pitch,
+                    0,
+                    180
+                );
+
+
+            targetJoystickRoll =
+                clamp(
+                    roll,
+                    0,
+                    180
+                );
+        }
+
+
+        // =========================================================
+        // SMOOTH JOYSTICK RENDER
+        //
+        // SignalR örneğin 20 FPS veri gönderse bile
+        // browser reticle'i yaklaşık 60 FPS çizer.
+        // =========================================================
+
+        const JOYSTICK_SMOOTHING = 0.18;
+
+
+        function smoothJoystickAnimation() {
+
+            displayedJoystickPitch +=
+                (
+                    targetJoystickPitch -
+                    displayedJoystickPitch
+                ) * JOYSTICK_SMOOTHING;
+
+
+            displayedJoystickRoll +=
+                (
+                    targetJoystickRoll -
+                    displayedJoystickRoll
+                ) * JOYSTICK_SMOOTHING;
+
+
+            updateJoystickReticle(
+                displayedJoystickPitch,
+                displayedJoystickRoll
+            );
+
+
+            requestAnimationFrame(
+                smoothJoystickAnimation
+            );
+        }
+
+
+        requestAnimationFrame(
+            smoothJoystickAnimation
+        );
+
+
+        // =========================================================
+        // JOYSTICK RETICLE
+        // =========================================================
+
+        function updateJoystickReticle(
+            pitch,
+            roll
+        ) {
+
+            pitch = Number(pitch);
+            roll = Number(roll);
+
+
+            if (!Number.isFinite(pitch))
+                pitch = 90;
+
+            if (!Number.isFinite(roll))
+                roll = 90;
+
+
+            pitch =
+                clamp(
+                    pitch,
+                    0,
+                    180
+                );
+
+
+            roll =
+                clamp(
+                    roll,
+                    0,
+                    180
+                );
+
+
+            const pitchNormalized =
+                (pitch - 90) / 90;
+
+
+            const rollNormalized =
+                (roll - 90) / 90;
+
+
+            const maxX =
+                miniPfd.clientWidth * 0.25;
+
+
+            const maxY =
+                miniPfd.clientHeight * 0.25;
+
+
+            const x =
+                clamp(
+                    rollNormalized * maxX,
+                    -maxX,
+                    maxX
+                );
+
+
+            const y =
+                clamp(
+                    -pitchNormalized * maxY,
+                    -maxY,
+                    maxY
+                );
+
+
+            joystickReticle.style.transform =
+                `translate(calc(-50% + ${x}px), ` +
+                `calc(-50% + ${y}px))`;
+
+
+            // -----------------------------------------------------
+            // COMMAND READOUT
+            // -----------------------------------------------------
+
+            const displayPitch =
+                Math.round(
+                    (pitch - 90)
+                );
+
+
+            const displayRoll =
+                Math.round(
+                    (roll - 90)
+                );
+
+
+            commandReadout.textContent =
+                `CMD P ${displayPitch >= 0 ? "+" : ""}` +
+                `${displayPitch}° / ` +
+                `R ${displayRoll >= 0 ? "+" : ""}` +
+                `${displayRoll}°`;
+        }
+
+
+        // =========================================================
+        // SMOOTH IMU PFD
+        // =========================================================
+
+        let lastPfdFrameTime =
+            performance.now();
+
+
+        function renderSmoothPFD(
+            timestamp
+        ) {
+
+            const deltaTime =
+                Math.min(
+                    timestamp -
+                    lastPfdFrameTime,
+                    100
+                );
+
+
+            lastPfdFrameTime =
+                timestamp;
+
+
+            const smoothing =
+                1 -
+                Math.pow(
+                    0.80,
+                    deltaTime / 16.67
+                );
+
+
+            smoothImuPitch +=
+                (
+                    targetImuPitch -
+                    smoothImuPitch
+                ) * smoothing;
+
+
+            smoothImuRoll +=
+                (
+                    targetImuRoll -
+                    smoothImuRoll
+                ) * smoothing;
+
+
+            updateMiniPFD(
+                smoothImuPitch,
+                smoothImuRoll,
+                currentAltitude,
+                currentAirspeed
+            );
+
+
+            requestAnimationFrame(
+                renderSmoothPFD
+            );
+        }
+
+
+        requestAnimationFrame(
+            renderSmoothPFD
+        );
+
+
+        // =========================================================
+        // THROTTLE
+        // =========================================================
+
+        function updateThrottle(
+            value
+        ) {
+
+            value =
+                Number(value);
+
+
+            if (!Number.isFinite(value))
+                value = 0;
+
+
+            value =
+                clamp(
+                    value,
+                    0,
+                    100
+                );
+
+
+            throttleValue.textContent =
+                Math.round(value);
+
+
+            throttleBar.style.width =
+                `${value}%`;
+        }
+
+
+        // =========================================================
+        // CONNECTION
+        // =========================================================
+
+        function updateConnectionStatus(
+            connected
+        ) {
+
+            if (connected) {
+
+                connectionDot.classList.remove(
+                    "offline"
+                );
+
+                connectionDot.classList.add(
+                    "online"
+                );
+
+                connectionText.textContent =
+                    "CONNECTED";
+
+            }
+            else {
+
+                connectionDot.classList.remove(
+                    "online"
+                );
+
+                connectionDot.classList.add(
+                    "offline"
+                );
+
+                connectionText.textContent =
+                    "DISCONNECTED";
+            }
+        }
+
+
+        // =========================================================
+        // GPS
+        // =========================================================
+
+        function updateGPS(
+            data
+        ) {
+
+            const lat =
+                Number(
+                    data.latitude ??
+                    data.Latitude ??
+                    0
+                );
+
+
+            const lon =
+                Number(
+                    data.longitude ??
+                    data.Longitude ??
+                    0
+                );
+
+
+            const sats =
+                Number(
+                    data.satellites ??
+                    data.Satellites ??
+                    0
+                );
+
+
+            document.getElementById(
+                "latitude"
+            ).textContent =
+                Number.isFinite(lat)
+                    ? lat.toFixed(6)
+                    : "0.000000";
+
+
+            document.getElementById(
+                "longitude"
+            ).textContent =
+                Number.isFinite(lon)
+                    ? lon.toFixed(6)
+                    : "0.000000";
+
+
+            document.getElementById(
+                "satellites"
+            ).textContent =
+                Number.isFinite(sats)
+                    ? Math.round(sats)
+                    : 0;
+
+
+            // Backend şu anda altitude göndermiyor.
+            currentAltitude = 0;
+        }
+
+
+        // =========================================================
+        // IMU + JOYSTICK
+        // =========================================================
+
+        function updateIMU(
+            data
+        ) {
+
+            // -----------------------------------------------------
+            // GERÇEK IMU
+            // -----------------------------------------------------
+
+            const pitch =
+                Number(
+                    data.imuPitch ??
+                    data.ImuPitch ??
+                    0
+                );
+
+
+            const roll =
+                Number(
+                    data.imuRoll ??
+                    data.ImuRoll ??
+                    0
+                );
+
+
+            // -----------------------------------------------------
+            // ACCELEROMETER
+            // -----------------------------------------------------
+
+            const ax =
+                Number(
+                    data.accelX ??
+                    data.AccelX ??
+                    0
+                );
+
+
+            const ay =
+                Number(
+                    data.accelY ??
+                    data.AccelY ??
+                    0
+                );
+
+
+            const az =
+                Number(
+                    data.accelZ ??
+                    data.AccelZ ??
+                    0
+                );
+
+
+            // -----------------------------------------------------
+            // GYRO
+            // -----------------------------------------------------
+
+            const gx =
+                Number(
+                    data.gyroX ??
+                    data.GyroX ??
+                    0
+                );
+
+
+            const gy =
+                Number(
+                    data.gyroY ??
+                    data.GyroY ??
+                    0
+                );
+
+
+            const gz =
+                Number(
+                    data.gyroZ ??
+                    data.GyroZ ??
+                    0
+                );
+
+
+            // -----------------------------------------------------
+            // IMU STATE
+            // -----------------------------------------------------
+
+            if (Number.isFinite(pitch)) {
+
+                imuPitch =
+                    pitch;
+
+                targetImuPitch =
+                    pitch;
+            }
+
+
+            if (Number.isFinite(roll)) {
+
+                imuRoll =
+                    roll;
+
+                targetImuRoll =
+                    roll;
+            }
+
+
+            // -----------------------------------------------------
+            // IMU NUMERIC DISPLAY
+            // -----------------------------------------------------
+
+            imuPitchValue.textContent =
+                `${imuPitch >= 0 ? "+" : ""}` +
+                `${imuPitch.toFixed(1)}°`;
+
+
+            imuRollValue.textContent =
+                `${imuRoll >= 0 ? "+" : ""}` +
+                `${imuRoll.toFixed(1)}°`;
+
+
+            imuAccelValue.textContent =
+                `${ax.toFixed(2)} ` +
+                `${ay.toFixed(2)} ` +
+                `${az.toFixed(2)}`;
+
+
+            imuGyroValue.textContent =
+                `${gx.toFixed(2)} ` +
+                `${gy.toFixed(2)} ` +
+                `${gz.toFixed(2)}`;
+
+
+            // -----------------------------------------------------
+            // JOYSTICK COMMAND
+            // -----------------------------------------------------
+
+            const commandPitch =
+                Number(
+                    data.joystickPitch ??
+                    data.JoystickPitch ??
+                    90
+                );
+
+
+            const commandRoll =
+                Number(
+                    data.joystickRoll ??
+                    data.JoystickRoll ??
+                    90
+                );
+
+
+            const commandYaw =
+                Number(
+                    data.joystickYaw ??
+                    data.JoystickYaw ??
+                    90
+                );
+
+
+            const commandThrottle =
+                Number(
+                    data.joystickThrottle ??
+                    data.JoystickThrottle ??
+                    0
+                );
+
+
+            const commandMode =
+                Number(
+                    data.flightMode ??
+                    data.FlightMode ??
+                    0
+                );
+
+
+            // -----------------------------------------------------
+            // JOYSTICK STATE
+            // -----------------------------------------------------
+
+            if (Number.isFinite(commandPitch)) {
+
+                joystickPitch =
+                    clamp(
+                        commandPitch,
+                        0,
+                        180
+                    );
+            }
+
+
+            if (Number.isFinite(commandRoll)) {
+
+                joystickRoll =
+                    clamp(
+                        commandRoll,
+                        0,
+                        180
+                    );
+            }
+
+
+            if (Number.isFinite(commandYaw)) {
+
+                joystickYaw =
+                    clamp(
+                        commandYaw,
+                        0,
+                        180
+                    );
+            }
+
+
+            if (Number.isFinite(commandThrottle)) {
+
+                joystickThrottle =
+                    clamp(
+                        commandThrottle,
+                        0,
+                        255
+                    );
+            }
+
+
+            if (Number.isFinite(commandMode)) {
+
+                flightMode =
+                    clamp(
+                        commandMode,
+                        0,
+                        255
+                    );
+            }
+
+
+            // -----------------------------------------------------
+            // ÖNEMLİ:
+            //
+            // Burada reticle'i doğrudan hareket ettirmiyoruz.
+            //
+            // SignalR → target
+            // requestAnimationFrame → reticle
+            // -----------------------------------------------------
+
+            setJoystickTarget(
+                joystickPitch,
+                joystickRoll
+            );
+
+
+            // -----------------------------------------------------
+            // THROTTLE
+            // -----------------------------------------------------
+
+            updateThrottle(
+                (joystickThrottle / 255) * 100
+            );
+        }
+
+
+        // =========================================================
+        // SIGNALR
+        // =========================================================
+
+        const connection =
+            new signalR.HubConnectionBuilder()
+
+                .withUrl(
+                    "/telemetryHub"
+                )
+
+                .withAutomaticReconnect()
+
+                .build();
+
+
+        // =========================================================
+        // TELEMETRY UPDATE
+        // =========================================================
+
+        connection.on(
+            "TelemetryUpdate",
+            function(data) {
+
+                if (!data)
+                    return;
+
+
+                // -------------------------------------------------
+                // CONNECTION
+                // -------------------------------------------------
+
+                const connected =
+                    data.isConnected ??
+                    data.IsConnected ??
+                    false;
+
+
+                updateConnectionStatus(
+                    connected
+                );
+
+
+                // -------------------------------------------------
+                // GPS
+                // -------------------------------------------------
+
+                updateGPS(
+                    data
+                );
+
+
+                // -------------------------------------------------
+                // IMU + JOYSTICK
+                // -------------------------------------------------
+
+                updateIMU(
+                    data
+                );
+
+
+                // -------------------------------------------------
+                // IMU STATUS
+                // -------------------------------------------------
+
+                if (connected) {
+
+                    imuStatus.textContent =
+                        "IMU: ACTIVE";
+
+                }
+                else {
+
+                    imuStatus.textContent =
+                        "IMU: NO DATA";
+                }
+
+            }
+        );
+
+
+        // =========================================================
+        // SIGNALR CONNECTION EVENTS
+        // =========================================================
+
+        connection.onreconnecting(
+            function() {
+
+                updateConnectionStatus(
+                    false
+                );
+
+                imuStatus.textContent =
+                    "IMU: NO DATA";
+            }
+        );
+
+
+        connection.onreconnected(
+            function() {
+
+                updateConnectionStatus(
+                    true
+                );
+            }
+        );
+
+
+        connection.onclose(
+            function() {
+
+                updateConnectionStatus(
+                    false
+                );
+
+                imuStatus.textContent =
+                    "IMU: NO DATA";
+            }
+        );
+
+
+        // =========================================================
+        // SIGNALR START
+        // =========================================================
+
+        async function startConnection() {
+
+            try {
+
+                await connection.start();
+
+                console.log(
+                    "SignalR connected."
+                );
+
+            }
+            catch (err) {
+
+                console.error(
+                    "SignalR connection error:",
+                    err
+                );
+
+
+                setTimeout(
+                    startConnection,
+                    3000
+                );
+            }
+        }
+
+
+        // =========================================================
+        // INITIAL STATE
+        // =========================================================
+
+        updateMiniPFD(
+            0,
+            0,
+            0,
+            0
+        );
+
+
+        setJoystickTarget(
+            90,
+            90
+        );
+
+
+        displayedJoystickPitch = 90;
+        displayedJoystickRoll = 90;
+
+
+        updateJoystickReticle(
+            90,
+            90
+        );
+
+
+        // =========================================================
+        // MAP
+        // =========================================================
+
+        const map =
+            L.map(
+                "map",
+                {
+                    zoomControl: true
+                }
+            ).setView(
+                [
+                    38.4237,
+                    27.1428
+                ],
+                10
+            );
+
+
+        L.tileLayer(
+            "https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png",
+            {
+                maxZoom: 19,
+
+                attribution:
+                    "&copy; OpenStreetMap"
+            }
+        ).addTo(map);
+
+
+        let aircraftMarker =
+            null;
+
+
+        // =========================================================
+        // MAP POSITION
+        // =========================================================
+
+        function updateMapPosition(
+            latitude,
+            longitude
+        ) {
+
+            latitude =
+                Number(latitude);
+
+            longitude =
+                Number(longitude);
+
+
+            if (
+                !Number.isFinite(latitude) ||
+                !Number.isFinite(longitude) ||
+                latitude === 0 ||
+                longitude === 0
+            ) {
+                return;
+            }
+
+
+            const position = [
+                latitude,
+                longitude
+            ];
+
+
+            if (!aircraftMarker) {
+
+                aircraftMarker =
+                    L.circleMarker(
+                        position,
+                        {
+                            radius: 7,
+                            weight: 2
+                        }
+                    ).addTo(map);
+
+
+                map.setView(
+                    position,
+                    15
+                );
+
+            }
+            else {
+
+                aircraftMarker.setLatLng(
+                    position
+                );
+            }
+        }
+
+
+        // =========================================================
+        // MAP TELEMETRY
+        // =========================================================
+
+        connection.on(
+            "TelemetryUpdate",
+            function(data) {
+
+                if (!data)
+                    return;
+
+
+                const lat =
+                    data.latitude ??
+                    data.Latitude ??
+                    0;
+
+
+                const lon =
+                    data.longitude ??
+                    data.Longitude ??
+                    0;
+
+
+                updateMapPosition(
+                    lat,
+                    lon
+                );
+            }
+        );
+
+
+        // =========================================================
+        // RESIZE
+        // =========================================================
+
+        window.addEventListener(
+            "resize",
+            function() {
+
+                updateJoystickReticle(
+                    displayedJoystickPitch,
+                    displayedJoystickRoll
+                );
+
+            }
+        );
+
+
+        // =========================================================
+        // START
+        // =========================================================
+
+        startConnection();
+
+    </script>
+
+</body>
+
+</html>

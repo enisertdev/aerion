@@ -1,0 +1,21 @@
+# Visual Studio
+.vs/
+*.user
+*.suo
+
+# .NET
+bin/
+obj/
+
+# PlatformIO
+.pio/
+.piolibdeps/
+
+# IDE
+.idea/
+
+# Logs
+*.log
+
+# Private configuration
+config.h
